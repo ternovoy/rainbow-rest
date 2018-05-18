@@ -3,13 +3,17 @@ package ua.net.tokar.json.rainbowrest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
 import javax.servlet.*;
@@ -114,7 +118,27 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             URI uri,
             Header[] headers
     ) throws IOException, URISyntaxException {
-        try ( CloseableHttpClient httpClient = HttpClients.createDefault() ) {
+        ConnectionKeepAliveStrategy keepAliveStrat = new DefaultConnectionKeepAliveStrategy() {
+
+            @Override
+            public long getKeepAliveDuration(
+                    HttpResponse response,
+                    HttpContext context
+            ) {
+                /*long keepAlive = super.getKeepAliveDuration( response, context );
+                if ( keepAlive == -1 ) {
+                    // Keep connections alive 5 seconds if a keep-alive value
+                    // has not be explicitly set by the server
+                    keepAlive = 5000;
+                }*/
+                return 5000;
+            }
+        };
+        try (
+                CloseableHttpClient httpClient = HttpClients.custom()
+                                                            .setKeepAliveStrategy( keepAliveStrat )
+                                                            .build()
+        ) {
             HttpGet httpGet = new HttpGet( uri );
             httpGet.setHeaders( headers );
             HttpEntity entity = httpClient.execute( httpGet ).getEntity();
