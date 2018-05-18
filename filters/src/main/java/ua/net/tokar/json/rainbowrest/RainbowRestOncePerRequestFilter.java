@@ -5,6 +5,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -141,6 +142,11 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         ) {
             HttpGet httpGet = new HttpGet( uri );
             httpGet.setHeaders( headers );
+            RequestConfig requestConfig = RequestConfig.custom()
+                                                       .setSocketTimeout( 1000 )
+                                                       .setConnectTimeout( 1000 )
+                                                       .build();
+            httpGet.setConfig( requestConfig );
             HttpEntity entity = httpClient.execute( httpGet ).getEntity();
             return entity != null ? EntityUtils.toString( entity ) : null;
         }
