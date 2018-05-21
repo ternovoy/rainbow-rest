@@ -34,6 +34,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
 
     private static final int DEFAULT_NUMBER_OF_THREADS = 10;
     private static final int DEFAULT_EXECUTION_TIMEOUT_SECONDS = 10;
+    private static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
     private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
     private static final String DEFAULT_NUMBER_OF_THREADS_PARAM_NAME = "numberOfThreads";
     private static final String DEFAULT_EXECUTION_TIMEOUT_SECONDS_PARAM_NAME = "executionTimeoutSeconds";
@@ -48,9 +49,12 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
 
     public RainbowRestOncePerRequestFilter(
             int numberOfThreads,
-            int executionTimeoutSeconds
+            int executionTimeoutSeconds,
+            int queueCapacity
     ) {
-        this.executorService = Executors.newFixedThreadPool( numberOfThreads );
+        this.executorService =  new ThreadPoolExecutor(numberOfThreads, numberOfThreads,
+                                                       0L, TimeUnit.MILLISECONDS,
+                                                       new LinkedBlockingQueue<Runnable>(queueCapacity));
         this.executionTimeoutSeconds = executionTimeoutSeconds;
     }
 
