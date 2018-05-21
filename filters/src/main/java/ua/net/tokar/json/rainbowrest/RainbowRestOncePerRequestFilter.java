@@ -143,7 +143,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             HttpGet httpGet = new HttpGet( uri );
             httpGet.setHeaders( headers );
             RequestConfig requestConfig = RequestConfig.custom()
-                                                       .setSocketTimeout( 1000 )
+   //                                                    .setSocketTimeout( 1000 )
                                                        .setConnectTimeout( 1000 )
                                                        .build();
             httpGet.setConfig( requestConfig );
