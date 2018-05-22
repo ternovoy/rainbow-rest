@@ -6,13 +6,21 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -34,6 +42,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
 
     private String fieldsParamName = DEFAULT_FIELDS_PARAM_NAME;
     private String includeParamName = DEFAULT_INCLUDE_PARAM_NAME;
+    private HttpClient httpClient;
 
     public RainbowRestWebFilter() {
     }
@@ -54,11 +63,25 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             int queueCapacity,
             long keepAlive,
             String fieldsParamName,
-            String includeParamName
+            String includeParamName,
+            int httpClientMaxTotalConnections,
+            int httpClientDefaultMaxPerRoute
     ) {
         super( corePoolSize, numberOfThreads, executionTimeoutSeconds, queueCapacity, keepAlive );
         this.fieldsParamName = fieldsParamName;
         this.includeParamName = includeParamName;
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+// Increase max total connection to 200
+        cm.setMaxTotal( httpClientMaxTotalConnections );
+// Increase default max connection per route to 20
+        cm.setDefaultMaxPerRoute( httpClientDefaultMaxPerRoute );
+// Increase max connections for localhost:80 to 50
+      /*  HttpHost localhost = new HttpHost( "locahost", 80 );
+        cm.setMaxPerRoute( new HttpRoute( localhost ), 50 );*/
+
+        httpClient = HttpClients.custom()
+                                .setConnectionManager( cm )
+                                .build();
     }
 
     /**
@@ -139,6 +162,39 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         }
 
         response.getWriter().write( tree.toString() );
+    }
+
+    @Override
+    protected String getResponseViaInternalDispatching(
+            URI uri,
+            Header[] headers
+    ) throws IOException, URISyntaxException {
+       /* ConnectionKeepAliveStrategy keepAliveStrat = new DefaultConnectionKeepAliveStrategy() {
+
+            @Override
+            public long getKeepAliveDuration(
+                    HttpResponse response,
+                    HttpContext context
+            ) {
+                *//*long keepAlive = super.getKeepAliveDuration( response, context );
+                if ( keepAlive == -1 ) {
+                    // Keep connections alive 5 seconds if a keep-alive value
+                    // has not be explicitly set by the server
+                    keepAlive = 5000;
+                }*//*
+                return 5000;
+            }
+        };*/
+
+            HttpGet httpGet = new HttpGet( uri );
+            httpGet.setHeaders( headers );
+/*            RequestConfig requestConfig = RequestConfig.custom()
+   //                                                    .setSocketTimeout( 1000 )
+                                                       .setConnectTimeout( 10000 )
+                                                       .build();
+            httpGet.setConfig( requestConfig );*/
+            HttpEntity entity = httpClient.execute( httpGet ).getEntity();
+            return entity != null ? EntityUtils.toString( entity ) : null;
     }
 
     private void processIncludes(
