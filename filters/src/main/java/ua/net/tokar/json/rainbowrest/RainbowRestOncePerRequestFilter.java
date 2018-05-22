@@ -125,34 +125,32 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             URI uri,
             Header[] headers
     ) throws IOException, URISyntaxException {
-        ConnectionKeepAliveStrategy keepAliveStrat = new DefaultConnectionKeepAliveStrategy() {
+       /* ConnectionKeepAliveStrategy keepAliveStrat = new DefaultConnectionKeepAliveStrategy() {
 
             @Override
             public long getKeepAliveDuration(
                     HttpResponse response,
                     HttpContext context
             ) {
-                /*long keepAlive = super.getKeepAliveDuration( response, context );
+                *//*long keepAlive = super.getKeepAliveDuration( response, context );
                 if ( keepAlive == -1 ) {
                     // Keep connections alive 5 seconds if a keep-alive value
                     // has not be explicitly set by the server
                     keepAlive = 5000;
-                }*/
+                }*//*
                 return 5000;
             }
-        };
+        };*/
         try (
-                CloseableHttpClient httpClient = HttpClients.custom()
-                                                            .setKeepAliveStrategy( keepAliveStrat )
-                                                            .build()
+                CloseableHttpClient httpClient = HttpClients.createDefault()
         ) {
             HttpGet httpGet = new HttpGet( uri );
             httpGet.setHeaders( headers );
-            RequestConfig requestConfig = RequestConfig.custom()
+/*            RequestConfig requestConfig = RequestConfig.custom()
    //                                                    .setSocketTimeout( 1000 )
                                                        .setConnectTimeout( 10000 )
                                                        .build();
-            httpGet.setConfig( requestConfig );
+            httpGet.setConfig( requestConfig );*/
             HttpEntity entity = httpClient.execute( httpGet ).getEntity();
             return entity != null ? EntityUtils.toString( entity ) : null;
         }
@@ -202,7 +200,14 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             List<Callable<T>> callables
     ) {
         List<Future<T>> futures = new ArrayList<>();
-        callables.forEach( c -> futures.add( executorService.submit( c ) ) );
+        try {
+            callables.forEach( c -> futures.add( executorService.submit( c ) ) );
+        } catch ( RejectedExecutionException e ) {
+            for(Future<T> future : futures) {
+                future.cancel( true );
+            }
+            throw new RuntimeException( e );
+        }
 
         List<T> result = new ArrayList<>();
         for ( Future<T> future : futures ) {
