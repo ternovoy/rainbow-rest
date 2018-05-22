@@ -48,13 +48,15 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     }
 
     public RainbowRestOncePerRequestFilter(
-            int numberOfThreads,
+            int corePoolSize,
+            int maxNumberOfThreads,
             int executionTimeoutSeconds,
-            int queueCapacity
+            int queueCapacity,
+            long keepAlive
     ) {
-        this.executorService =  new ThreadPoolExecutor(numberOfThreads, numberOfThreads,
-                                                       0L, TimeUnit.MILLISECONDS,
-                                                       new LinkedBlockingQueue<Runnable>(queueCapacity));
+        this.executorService =  new ThreadPoolExecutor(corePoolSize, maxNumberOfThreads,
+                                                       keepAlive, TimeUnit.MILLISECONDS,
+                                                       new LinkedBlockingQueue<>(queueCapacity));
         this.executionTimeoutSeconds = executionTimeoutSeconds;
     }
 

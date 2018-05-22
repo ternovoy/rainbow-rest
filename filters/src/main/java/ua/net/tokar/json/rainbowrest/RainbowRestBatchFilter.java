@@ -42,12 +42,14 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
     }
 
     public RainbowRestBatchFilter(
+            int corePoolSize,
             int numberOfThreads,
             int executionTimeoutSeconds,
-            int queuCapacity,
+            int queueCapacity,
+            long keepAlive,
             String batchEndpointUri
     ) {
-        super( numberOfThreads, executionTimeoutSeconds, queuCapacity );
+        super( corePoolSize, numberOfThreads, executionTimeoutSeconds, queueCapacity, keepAlive );
         this.batchEndpointUri = batchEndpointUri;
     }
 

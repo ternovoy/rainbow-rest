@@ -48,13 +48,15 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     }
 
     public RainbowRestWebFilter(
+            int corePoolSize,
             int numberOfThreads,
             int executionTimeoutSeconds,
             int queueCapacity,
+            long keepAlive,
             String fieldsParamName,
             String includeParamName
     ) {
-        super( numberOfThreads, executionTimeoutSeconds, queueCapacity );
+        super( corePoolSize, numberOfThreads, executionTimeoutSeconds, queueCapacity, keepAlive );
         this.fieldsParamName = fieldsParamName;
         this.includeParamName = includeParamName;
     }
