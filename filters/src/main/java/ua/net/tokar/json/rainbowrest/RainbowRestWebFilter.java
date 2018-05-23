@@ -9,7 +9,6 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
@@ -78,10 +77,10 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
 // Increase max connections for localhost:80 to 50
       /*  HttpHost localhost = new HttpHost( "locahost", 80 );
         cm.setMaxPerRoute( new HttpRoute( localhost ), 50 );*/
-
-        httpClient = HttpClients.custom()
+        httpClient = HttpClients.createDefault();
+      /*  httpClient = HttpClients.custom()
                                 .setConnectionManager( cm )
-                                .build();
+                                .build();*/
     }
 
     /**
